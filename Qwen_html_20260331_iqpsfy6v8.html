@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Trading Journal Pro</title>
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #334155;
+            --glass: rgba(30, 41, 59, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR (Desktop) --- */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-item.active, .nav-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .text-green { color: var(--success); }
+        .text-red { color: var(--danger); }
+
+        /* AI Insight Box */
+        .ai-insight {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .ai-icon {
+            font-size: 1.5rem;
+            color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        /* Trade Form */
+        .trade-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        input, select {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn-add {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: auto;
+            height: 42px;
+            align-self: flex-end;
+        }
+
+        /* Trade Table */
+        .table-container {
+            overflow-x: auto;
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .badge-long { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-short { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body { flex-direction: column; height: 100vh; }
+            .sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 70px;
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 0;
+                border-right: none;
+                border-top: 1px solid var(--border);
+                transform: translateY(0);
+            }
+            .logo { display: none; }
+            .nav-item {
+                flex-direction: column;
+                font-size: 0.7rem;
+                padding: 5px;
+                margin: 0;
+                gap: 4px;
+            }
+            .nav-item span { display: none; } /* Hide text on mobile nav */
+            .nav-item i { font-size: 1.5rem; }
+            
+            .main-content { padding: 1rem; padding-bottom: 80px; }
+            .mobile-header { display: flex; }
+            
+            .trade-form { grid-template-columns: 1fr; }
+            .btn-add { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="logo"><i class="ph ph-trend-up"></i> TradeAI</div>
+        <i class="ph ph-list" style="font-size: 1.5rem;"></i>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="logo">
+            <i class="ph ph-trend-up"></i> TradeAI
+        </div>
+        <a class="nav-item active" onclick="switchTab('dashboard')">
+            <i class="ph ph-squares-four"></i>
+            <span>Dashboard</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('journal')">
+            <i class="ph ph-book-open"></i>
+            <span>Journal</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('analytics')">
+            <i class="ph ph-chart-line-up"></i>
+            <span>Analytics</span>
+        </a>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        
+        <!-- AI Insight Banner -->
+        <div class="ai-insight">
+            <div class="ai-icon"><i class="ph ph-robot"></i></div>
+            <div>
+                <h3 style="margin-bottom: 5px;">AI Analysis</h3>
+                <p id="ai-text" style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.4;">
+                    Waiting for trade data to generate insights...
+                </p>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-title">Net P&L</div>
+                <div class="card-value" id="stat-pnl">$0.00</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Win Rate</div>
+                <div class="card-value" id="stat-winrate">0%</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Profit Factor</div>
+                <div class="card-value" id="stat-pf">0.0</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Total Trades</div>
+                <div class="card-value" id="stat-count">0</div>
+            </div>
+        </div>
+
+        <!-- Add Trade Form -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 1rem;">Log New Trade</h3>
+            <div class="trade-form">
+                <div class="form-group">
+                    <label>Asset (e.g., EURUSD)</label>
+                    <input type="text" id="t-asset" placeholder="BTC/USD">
+                </div>
+                <div class="form-group">
+                    <label>Direction</label>
+                    <select id="t-direction">
+                        <option value="Long">Long 🟢</option>
+                        <option value="Short">Short 🔴</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>P&L ($)</label>
+                    <input type="number" id="t-pnl" placeholder="-50 or 100">
+                </div>
+                <div class="form-group">
+                    <label>Setup/Strategy</label>
+                    <input type="text" id="t-setup" placeholder="Breakout, Reversal...">
+                </div>
+                <button class="btn-add" onclick="addTrade()">Add Trade</button>
+            </div>
+        </div>
+
+        <!-- Recent Trades Table -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem;">Recent History</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Asset</th>
+                            <th>Side</th>
+                            <th>Setup</th>
+                            <th>P&L</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trade-table-body">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Chart Section (Hidden by default on mobile unless scrolled) -->
+        <div class="card" style="margin-top: 2rem; height: 300px;">
+            <canvas id="equityChart"></canvas>
+        </div>
+
+    </main>
+
+    <script>
+        // State Management
+        let trades = JSON.parse(localStorage.getItem('tradingJournalData')) || [];
+        let chartInstance = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTable();
+            updateStats();
+            runAIAnalysis();
+            initChart();
+        });
+
+        // --- Core Functions ---
+
+        function addTrade() {
+            const asset = document.getElementById('t-asset').value.toUpperCase();
+            const direction = document.getElementById('t-direction').value;
+            const pnl = parseFloat(document.getElementById('t-pnl').value);
+            const setup = document.getElementById('t-setup').value;
+
+            if (!asset || isNaN(pnl)) {
+                alert("Please fill in Asset and P&L fields");
+                return;
+            }
+
+            const newTrade = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString(),
+                asset,
+                direction,
+                pnl,
+                setup: setup || 'None'
+            };
+
+            trades.unshift(newTrade); // Add to top
+            saveData();
+            
+            // Reset Form
+            document.getElementById('t-asset').value = '';
+            document.getElementById('t-pnl').value = '';
+            document.getElementById('t-setup').value = '';
+
+            renderTable();
+            updateStats();
+            runAIAnalysis();
+            updateChart();
+        }
+
+        function deleteTrade(id) {
+            if(confirm('Delete this trade?')) {
+                trades = trades.filter(t => t.id !== id);
+                saveData();
+                renderTable();
+                updateStats();
+                runAIAnalysis();
+                updateChart();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('tradingJournalData', JSON.stringify(trades));
+        }
+
+        // --- UI Rendering ---
+
+        function renderTable() {
+            const tbody = document.getElementById('trade-table-body');
+            tbody.innerHTML = '';
+
+            trades.slice(0, 10).forEach(trade => {
+                const row = document.createElement('tr');
+                const pnlClass = trade.pnl >= 0 ? 'text-green' : 'text-red';
+                const badgeClass = trade.direction === 'Long' ? 'badge-long' : 'badge-short';
+                
+                row.innerHTML = `
+                    <td style="color:var(--text-muted)">${trade.date}</td>
+                    <td style="font-weight:600">${trade.asset}</td>
+                    <td><span class="badge ${badgeClass}">${trade.direction}</span></td>
+                    <td>${trade.setup}</td>
+                    <td class="${pnlClass}" style="font-weight:700">${trade.pnl >= 0 ? '+' : ''}$${trade.pnl}</td>
+                    <td><i class="ph ph-trash" style="cursor:pointer; color:var(--danger)" onclick="deleteTrade(${trade.id})"></i></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateStats() {
+            const totalPnL = trades.reduce((acc, t) => acc + t.pnl, 0);
+            const wins = trades.filter(t => t.pnl > 0).length;
+            const totalTrades = trades.length;
+            const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(1) : 0;
+            
+            const grossProfit = trades.filter(t => t.pnl > 0).reduce((acc, t) => acc + t.pnl, 0);
+            const grossLoss = Math.abs(trades.filter(t => t.pnl < 0).reduce((acc, t) => acc + t.pnl, 0));
+            const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : grossProfit > 0 ? '∞' : '0.00';
+
+            // Animate Numbers
+            document.getElementById('stat-pnl').innerText = `$${totalPnL.toFixed(2)}`;
+            document.getElementById('stat-pnl').className = `card-value ${totalPnL >= 0 ? 'text-green' : 'text-red'}`;
+            
+            document.getElementById('stat-winrate').innerText = `${winRate}%`;
+            document.getElementById('stat-pf').innerText = profitFactor;
+            document.getElementById('stat-count').innerText = totalTrades;
+        }
+
+        // --- AI Analysis Engine (Heuristic) ---
+        function runAIAnalysis() {
+            const aiText = document.getElementById('ai-text');
+            
+            if (trades.length === 0) {
+                aiText.innerText = "Start logging trades to unlock AI insights on your performance patterns.";
+                return;
+            }
+
+            const totalPnL = trades.reduce((acc, t) => acc + t.pnl, 0);
+            const wins = trades.filter(t => t.pnl > 0);
+            const losses = trades.filter(t => t.pnl < 0);
+            
+            let insights = [];
+
+            // 1. Win Rate Analysis
+            const winRate = (wins.length / trades.length) * 100;
+            if (winRate > 60) insights.push("Your win rate is excellent (>60%). Focus on maintaining discipline.");
+            else if (winRate < 40) insights.push("Your win rate is low. Consider reviewing your entry criteria or risk management.");
+
+            // 2. Risk/Reward Proxy (Avg Win vs Avg Loss)
+            const avgWin = wins.length ? wins.reduce((a,b)=>a+b.pnl,0)/wins.length : 0;
+            const avgLoss = losses.length ? Math.abs(losses.reduce((a,b)=>a+b.pnl,0)/losses.length) : 0;
+            
+            if (avgWin > avgLoss * 1.5) insights.push("Great Risk/Reward ratio. You are letting winners run.");
+            if (avgLoss > avgWin) insights.push("Warning: Your average loss is larger than your average win. Tighten stop losses.");
+
+            // 3. Asset Concentration
+            const assets = {};
+            trades.forEach(t => assets[t.asset] = (assets[t.asset] || 0) + 1);
+            const topAsset = Object.keys(assets).reduce((a, b) => assets[a] > assets[b] ? a : b);
+            if (assets[topAsset] > trades.length * 0.5) insights.push(`You are heavily focused on ${topAsset}. Ensure diversification.`);
+
+            // 4. Streak Detection
+            let currentStreak = 0;
+            let lastWasWin = null;
+            // Simple check on last 3 trades
+            const recent = trades.slice(0, 3);
+            const allRecentWin = recent.every(t => t.pnl > 0);
+            const allRecentLoss = recent.every(t => t.pnl < 0);
+
+            if (allRecentWin) insights.push("You are on a hot streak! Don't get overconfident.");
+            if (allRecentLoss) insights.push("You are on a losing streak. Consider taking a break to reset.");
+
+            aiText.innerText = insights.join(" ") || "Data is too sparse for deep analysis. Keep trading!";
+        }
+
+        // --- Chart.js Integration ---
+        function initChart() {
+            const ctx = document.getElementById('equityChart').getContext('2d');
+            
+            // Gradient for chart
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Equity Curve',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { 
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+            updateChart();
+        }
+
+        function updateChart() {
+            if (!chartInstance) return;
+
+            // Calculate cumulative PnL
+            let cumulative = 0;
+            const dataPoints = trades.slice().reverse().map(t => {
+                cumulative += t.pnl;
+                return cumulative;
+            });
+            
+            // Add starting 0
+            if(dataPoints.length > 0) dataPoints.unshift(0);
+
+            chartInstance.data.labels = Array.from({length: dataPoints.length}, (_, i) => i);
+            chartInstance.data.datasets[0].data = dataPoints;
+            chartInstance.update();
+        }
+
+        function switchTab(tabName) {
+            // Simple visual toggle for nav items
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // In a real app, this would hide/show sections. 
+            // For this single-page demo, we just scroll to top
+            document.querySelector('.main-content').scrollTop = 0;
+        }
+    </script>
+</body>
+</html>
